@@ -6,6 +6,11 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 
+#[get("/")]
+fn index() -> &'static str {
+    "Hello, World!"
+}
+
 fn main() {
-    rocket::ignite().launch();
+    rocket::ignite().mount("/", routes![index]).launch();
 }
