@@ -6,6 +6,8 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 
+mod nfa;
+
 #[get("/")]
 fn index() -> &'static str {
     "Hello, World!"
