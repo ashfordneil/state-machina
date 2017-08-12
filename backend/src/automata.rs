@@ -30,6 +30,7 @@ pub struct Sanitary;
 pub enum NfaError {
     UnknownState(String),
     UnknownSymbol(String),
+    InvalidStateName(String),
 }
 
 /// Nondeterministic finite automata.
@@ -102,6 +103,12 @@ impl Nfa<Unsanitary> {
             .next()
         {
             return Err(NfaError::UnknownState(unknown_state.to_owned()));
+        }
+
+        if let Some(invalid_state) = nodes.iter().map(|(state, _)| state).find(|&state| {
+            state.contains("+") || state.contains("|") || state.is_empty()
+        }) {
+            return Err(NfaError::InvalidStateName(invalid_state.to_owned()));
         }
 
         Ok(Nfa {
@@ -248,6 +255,35 @@ fn invalid_nfa_start_state() {
     let unsanitary: Nfa<_> = serde_json::from_str(input).unwrap();
     match unsanitary.check().unwrap_err() {
         NfaError::UnknownState(err) => assert_eq!(err, "4"),
+        err @ _ => panic!(err),
+    }
+}
+
+#[test]
+fn invalid_nfa_state_name() {
+    let input = r#"{
+        "start": "1",
+        "alphabet": ["a", "b"],
+        "nodes": {
+            "1": {
+                "a": ["1", "2"],
+                "b": ["1"]
+            },
+            "2": {
+                "a": ["3"],
+                "b": ["3"]
+            },
+            "3": {
+                "a": ["1"],
+                "b": ["2"]
+            },
+            "1 + 2": { }
+        },
+        "final_states": ["3"]
+    }"#;
+    let unsanitary: Nfa<_> = serde_json::from_str(input).unwrap();
+    match unsanitary.check().unwrap_err() {
+        NfaError::InvalidStateName(err) => assert_eq!(err, "1 + 2"),
         err @ _ => panic!(err),
     }
 }
