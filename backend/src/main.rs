@@ -22,19 +22,18 @@ mod automata;
 use automata::{Nfa, Dfa, Unsanitary};
 
 #[get("/")]
-fn index() -> &'static str {
-    //Render home page
-    "Hello, World!"
-}
-
-#[post("/submit", format="application/json", data="<data>")]
-fn submit_nfa(data: Json<Nfa<Unsanitary>>) -> Json<Dfa> {
-    Json(data.into_inner().check().unwrap().make_deterministic())
+fn index() -> io::Result<NamedFile> {
+    NamedFile::open("../frontend/build/index.html")
 }
 
 #[get("/<file..>")]
 fn files(file: PathBuf) -> Option<NamedFile> {
     NamedFile::open(Path::new("../frontend/build/").join(file)).ok()
+}
+
+#[post("/submit", format="application/json", data="<data>")]
+fn submit_nfa(data: Json<Nfa<Unsanitary>>) -> Json<Dfa> {
+    Json(data.into_inner().check().unwrap().make_deterministic())
 }
 
 
