@@ -11,11 +11,13 @@ import Json.Decode as Decode
 import List.Extra
 import Ports.Vis.Network as Network exposing (Network, NodeId, Msg(..))
 import Errata
+import UI
 import Unwrap
 
 
 type Msg
     = Network Network.Msg
+    | UI UI.Msg
     | ConvertToDFA
     | ConvertToDFAResult (Result Http.Error FA)
 
@@ -23,6 +25,7 @@ type Msg
 type alias Model =
     { currentFA : FA
     , network : Network
+    , ui : UI.Model
     , loading : Bool
     }
 
@@ -95,9 +98,12 @@ init =
                         , layout = { defaultLayoutOptions | randomSeed = Just 0 }
                     }
             }
+        
+        ui = UI.Unselected
     in
         { network = network
         , currentFA = currentFA
+        , ui = ui
         , loading = False
         }
             ! [ Cmd.map Network (Network.initCmd network) ]
@@ -113,6 +119,14 @@ update msg model =
             in
                 { model | network = networkModel }
                     ! [ Cmd.map Network networkCmd ]
+
+        UI msg ->
+            let
+                ( uiModel, uiCmd ) =
+                    UI.update msg model.ui
+            in
+                { model | ui = uiModel }
+                    ! [ Cmd.map UI uiCmd ]
 
         ConvertToDFA ->
             { model | loading = True }
@@ -148,18 +162,11 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    div []
+    div [ class "container" ]
         [ h1 [] [ text "State Machina" ]
-        , div [ id "buttons" ]
-            [ button [ onClick ConvertToDFA, class "button" ] [ text "Convert To Deterministic"]
-            , Network.view model.network
-            ]
-        , div []
-            [ button [] [ text "Add State" ]
-            , button [] [ text "Add Transition" ]
-            , button [] [ text "Go" ]
-            ]
+        , Html.map UI (UI.viewButtons model.ui)
         , Network.view model.network
+        , Html.map UI (UI.viewInput model.ui)
         , Errata.stateMachines
         ]
 
@@ -306,10 +313,5 @@ faDecoder =
         FA
         (Decode.field "start" Decode.string)
         (Decode.field "alphabet" (Decode.list Decode.string))
-<<<<<<< HEAD
         (Decode.field "nodes" (Decode.dict (Decode.dict (Decode.string |> Decode.map List.singleton))))
         (Decode.field "final_states" (Decode.list Decode.string))
-=======
-        (Decode.field "nodes" (Decode.dict (Decode.dict (Decode.list Decode.string))))
-        (Decode.field "final_states" (Decode.list Decode.string))
->>>>>>> 63891bdf80de4ddca74a278b9a561b4a89add481
