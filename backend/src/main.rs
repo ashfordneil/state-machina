@@ -12,9 +12,9 @@ extern crate rocket_contrib;
 extern crate serde_json;
 
 use rocket_contrib::Json;
-use nfa::*;
 
-mod nfa;
+mod automata;
+use automata::{Nfa, Unsanitary};
 
 #[get("/")]
 fn index() -> &'static str {
