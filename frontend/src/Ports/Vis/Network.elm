@@ -5,7 +5,7 @@ import Html.Attributes exposing (id)
 
 
 type alias NodeId =
-    Int
+    String
 
 
 type alias Node =
@@ -38,6 +38,7 @@ type alias Network =
 type Msg
     = StartInit
     | InitSuccessful Bool
+    | UpdateData Data
 
 
 initCmd : Network -> Cmd Msg
