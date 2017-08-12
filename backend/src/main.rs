@@ -111,7 +111,8 @@ mod test {
             "final_states": ["3"]
         }"#;
 
-        let mut response = client.post("/submit")
+        let mut response = client
+            .post("/submit")
             .body(input)
             .header(ContentType::JSON)
             .dispatch();
@@ -128,7 +129,8 @@ mod test {
     fn test_empty_nfa() {
         let rocket = rocket();
         let client = Client::new(rocket).expect("valid rocket instance");
-        let response = client.post("/submit")
+        let response = client
+            .post("/submit")
             .body("{}")
             .header(ContentType::JSON)
             .dispatch();

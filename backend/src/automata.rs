@@ -469,18 +469,20 @@ impl Dfa {
     }
 
     /// Minimises the DFA.
-    pub fn minimise(&mut self) {
+    pub fn minimise(mut self) -> Self {
         // construct reversed graph
-        let mut backtrack: HashMap<_, HashMap<&String, _>> = self.nodes
+        let mut backtrack: HashMap<_, HashMap<String, _>> = self.nodes
             .iter()
             .map(|(node, _)| (node.to_owned(), HashMap::new()))
             .collect();
         for (state, transforms) in &self.nodes {
             for (letter, new_state) in transforms {
-                let mut map: &mut HashMap<String, _> = backtrack.get_mut(new_state.as_str()).unwrap();
-                let value = map.get(letter).unwrap_or_default();
-                value.insert(state.to_owned());
-                map.insert(letter.to_owned(), value);
+                backtrack
+                    .get_mut(new_state.as_str())
+                    .unwrap()
+                    .entry(letter.to_owned())
+                    .or_insert(HashSet::new())
+                    .insert(state.to_owned());
             }
         }
 
@@ -497,19 +499,69 @@ impl Dfa {
                 continue;
             }
 
-            for (&letter, states) in &backtrack[&right] {
+            for (letter, states) in &backtrack[&right] {
                 for state in states {
-                    self.nodes.get_mut(state.as_str()).unwrap().insert(letter.to_owned(), left.to_owned());
+                    if let Some(transitions) = self.nodes.get_mut(state.as_str()) {
+                        transitions.insert(letter.to_owned(), left.to_owned());
+                    }
                 }
             }
 
             let new_name = match renames.get(&left) {
                 Some(name) => format!("{} | {}", name, right),
-                None => format!("{} | {}", left, right)
+                None => format!("{} | {}", left, right),
             };
 
-            renames.insert(left, new_name);
+            renames.insert(left.to_owned(), new_name);
+
+            if self.start == right {
+                self.start = left;
+            }
+
+            self.final_states.remove(&right);
+
+            self.nodes.remove(&right);
         }
+
+        if renames.contains_key(&self.start) {
+            self.start = renames[&self.start].to_owned();
+        }
+
+        self.final_states = self.final_states
+            .into_iter()
+            .map(|x| {
+                renames.get(x.as_str()).map(|y| y.to_owned()).unwrap_or(x)
+            })
+            .collect();
+
+        self.nodes = self.nodes
+            .into_iter()
+            .map(|(state, transitions)| {
+                (
+                    state,
+                    transitions
+                        .into_iter()
+                        .map(|(letter, new_state)| {
+                            (
+                                letter,
+                                renames
+                                    .get(new_state.as_str())
+                                    .map(|y| y.to_owned())
+                                    .unwrap_or(new_state),
+                            )
+                        })
+                        .collect(),
+                )
+            })
+            .collect();
+
+        for (old, new) in renames {
+            if let Some(val) = self.nodes.remove(&old) {
+                self.nodes.insert(new, val);
+            }
+        }
+
+        self
     }
 }
 
@@ -535,4 +587,62 @@ pub fn lint_dfa_minimised() {
     let nfa = unsanitary.check().unwrap();
     let dfa = nfa.make_deterministic();
     assert!(dfa.lint_states().is_empty())
+}
+
+#[test]
+pub fn lint_dfa_unminimised() {
+    let input = r#"{
+        "start": "1",
+        "alphabet": ["a", "b"],
+        "nodes": {
+            "1": {
+                "a": ["2"],
+                "b": ["3"]
+            },
+            "2": {},
+            "3": {
+                "a": ["4"],
+                "b": ["1"]
+            },
+            "4": {}
+        },
+        "final_states": ["2", "4"]
+    }"#;
+    let unsanitary: Nfa<_> = serde_json::from_str(input).unwrap();
+    let nfa = unsanitary.check().unwrap();
+    let dfa = nfa.make_deterministic();
+    assert_eq!(
+        dfa.lint_states()
+            .into_iter()
+            .map(|(x, y)| (x.to_owned(), y.to_owned()))
+            .collect::<HashSet<_>>(),
+        vec![("1".into(), "3".into()), ("2".into(), "4".into())]
+            .into_iter()
+            .collect()
+    )
+}
+
+#[test]
+pub fn optimise_dfa() {
+    let input = r#"{
+        "start": "1",
+        "alphabet": ["a", "b"],
+        "nodes": {
+            "1": {
+                "a": ["2"],
+                "b": ["3"]
+            },
+            "2": {},
+            "3": {
+                "a": ["4"],
+                "b": ["1"]
+            },
+            "4": {}
+        },
+        "final_states": ["2", "4"]
+    }"#;
+    let unsanitary: Nfa<_> = serde_json::from_str(input).unwrap();
+    let nfa = unsanitary.check().unwrap();
+    let dfa = nfa.make_deterministic();
+    panic!("Output: {:?}", dfa.minimise());
 }
