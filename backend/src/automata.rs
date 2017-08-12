@@ -264,7 +264,7 @@ where
 }
 
 impl Nfa<Sanitary> {
-    pub fn make_deterministic(self) -> Option<Dfa> {
+    pub fn make_deterministic(self) -> Dfa {
         let Nfa {
             alphabet,
             start: nfa_start,
@@ -309,12 +309,12 @@ impl Nfa<Sanitary> {
             nodes.insert(dfa_state, transition_table);
         }
 
-        Some(Dfa {
+        Dfa {
             final_states,
             start,
             alphabet,
             nodes,
-        })
+        }
     }
 }
 
@@ -343,7 +343,7 @@ fn basic_deterministic_conversion() {
         start,
         alphabet,
         nodes,
-    } = nfa.make_deterministic().unwrap();
+    } = nfa.make_deterministic();
     assert_eq!(
         final_states,
         vec!["1 + 2 + 3".into(), "1 + 3".into()]
