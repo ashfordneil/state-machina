@@ -27,22 +27,24 @@ type ID = usize;
 
 #[derive(Serialize, Deserialize)]
 struct Message {
-        id: Option<ID>,
-            contents: String
+    id: Option<ID>,
+    contents: String,
 }
 
 // curl -X POST --data '{"id": 1, "contents":"asdf"}' http://localhost:8000/test -H "Content-Type: application/json"
-#[post("/test", format="application/json", data="<data>")]
+#[post("/test", format = "application/json", data = "<data>")]
 fn test_thing(data: Json<Message>) -> &'static str {
     "it works!"
 }
 
-#[post("/submit", format="application/json", data="<data>")]
+#[post("/submit", format = "application/json", data = "<data>")]
 fn submit_nfa(data: Json<Nfa<Unsanitary>>) -> &'static str {
     "it works!"
 }
 
 
 fn main() {
-    rocket::ignite().mount("/", routes![index, test_thing, submit_nfa]).launch();
+    rocket::ignite()
+        .mount("/", routes![index, test_thing, submit_nfa])
+        .launch();
 }
