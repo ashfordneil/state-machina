@@ -389,7 +389,7 @@ fn basic_deterministic_conversion() {
 }
 
 /// Deterministic finite automata.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Dfa {
     /// The final (accepting) states of the automata.
     final_states: HashSet<String>,
