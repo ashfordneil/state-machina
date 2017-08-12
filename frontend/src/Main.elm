@@ -18,7 +18,6 @@ import Unwrap
 type Msg
     = Network Network.Msg
     | UI UI.Msg
-    | ConvertToDFA
     | ConvertToDFAResult (Result Http.Error FA)
 
 
@@ -98,8 +97,9 @@ init =
                         , layout = { defaultLayoutOptions | randomSeed = Just 0 }
                     }
             }
-        
-        ui = UI.Unselected
+
+        ui =
+            UI.Unselected
     in
         { network = network
         , currentFA = currentFA
@@ -120,6 +120,12 @@ update msg model =
                 { model | network = networkModel }
                     ! [ Cmd.map Network networkCmd ]
 
+        UI UI.Go ->
+            { model | loading = True }
+                ! [ Http.post "/submit" (Http.jsonBody (encodeFA model.currentFA)) faDecoder
+                        |> Http.send ConvertToDFAResult
+                  ]
+
         UI msg ->
             let
                 ( uiModel, uiCmd ) =
@@ -127,12 +133,6 @@ update msg model =
             in
                 { model | ui = uiModel }
                     ! [ Cmd.map UI uiCmd ]
-
-        ConvertToDFA ->
-            { model | loading = True }
-                ! [ Http.post "/submit" (Http.jsonBody (encodeFA model.currentFA)) faDecoder
-                        |> Http.send ConvertToDFAResult
-                  ]
 
         ConvertToDFAResult result ->
             let
@@ -169,6 +169,8 @@ view model =
         , Html.map UI (UI.viewInput model.ui)
         , Errata.stateMachines
         ]
+
+
 
 ---- PROGRAM ----
 
