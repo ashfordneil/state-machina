@@ -1,32 +1,47 @@
 module Main exposing (..)
 
-import Html exposing (Html, text, div, img)
-import Html.Attributes exposing (src)
+import Html exposing (..)
+import Ports.Vis.Network as Network exposing (Network)
 
 
----- MODEL ----
+type Msg
+    = Network Network.Msg
 
 
 type alias Model =
-    {}
+    { network : Network
+    }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( {}, Cmd.none )
-
-
-
----- UPDATE ----
-
-
-type Msg
-    = NoOp
+    let
+        network =
+            { divId = "mainNetwork"
+            , data = { nodes = [], edges = [] }
+            , options = Network.defaultOptions
+            }
+    in
+    { network = network
+    }
+        ! [ Cmd.map Network (Network.initCmd network) ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
+    case msg of
+        Network msg ->
+            let
+                ( networkModel, networkCmd ) =
+                    Network.update msg model.network
+            in
+            { model | network = networkModel }
+                ! [ Cmd.map Network networkCmd ]
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.map Network (Network.subscriptions model.network)
 
 
 
@@ -35,10 +50,7 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ img [ src "/logo.svg" ] []
-        , div [] [ text "Your Elm App is working!" ]
-        ]
+    Network.view model.network
 
 
 
@@ -51,5 +63,5 @@ main =
         { view = view
         , init = init
         , update = update
-        , subscriptions = always Sub.none
+        , subscriptions = subscriptions
         }
