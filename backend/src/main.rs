@@ -33,7 +33,7 @@ fn files(file: PathBuf) -> Option<NamedFile> {
 
 #[post("/submit", format = "application/json", data = "<data>")]
 fn submit_nfa(data: Json<Nfa<Unsanitary>>) -> Json<Dfa> {
-    Json(data.into_inner().check().unwrap().make_deterministic())
+    Json(data.into_inner().check().unwrap().make_deterministic().minimise())
 }
 
 fn rocket() -> rocket::Rocket {
