@@ -389,7 +389,7 @@ fn basic_deterministic_conversion() {
 }
 
 /// Deterministic finite automata.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Dfa {
     /// The final (accepting) states of the automata.
     final_states: HashSet<String>,
@@ -403,4 +403,92 @@ pub struct Dfa {
     /// The nodes within the automata. Each node has mappings from alphabet symbols to transition
     /// states.
     nodes: HashMap<String, HashMap<String, String>>,
+}
+
+impl Dfa {
+    /// Determines which states in the DFA are equivalent. Returns the set of (sorted) pairs of
+    /// equivalent states.
+    fn lint_states<'a>(&'a self) -> HashSet<(&'a String, &'a String)> {
+        let mut output: HashSet<_> = self.nodes
+            .keys()
+            .cartesian_product(self.nodes.keys())
+            .filter(|&(ref x, ref y)| x < y)
+            .collect();
+        let mut work: VecDeque<_> = self.final_states
+            .iter()
+            .cartesian_product(self.nodes.keys())
+            .filter(|&(_, right)| !self.final_states.contains(right))
+            .map(|(left, right)| if left < right {
+                (left, right)
+            } else {
+                (right, left)
+            })
+            .inspect(|node| { output.remove(node); })
+            .collect();
+
+        // construct reversed graph
+        let mut backtrack: HashMap<_, HashMap<&String, _>> = self.nodes
+            .iter()
+            .map(|(node, _)| (node, HashMap::new()))
+            .collect();
+        for (state, transforms) in &self.nodes {
+            for (letter, new_state) in transforms {
+                backtrack
+                    .get_mut(&new_state)
+                    .unwrap()
+                    .entry(&letter)
+                    .or_insert(HashSet::new())
+                    .insert(state);
+            }
+        }
+
+        while let Some(node) = work.pop_front() {
+            for letter in &self.alphabet {
+                let (left, right) = node;
+                if let (Some(left), Some(right)) =
+                    (backtrack[left].get(letter), backtrack[right].get(letter))
+                {
+                    for left in left {
+                        for right in right {
+                            if left < right {
+                                if output.remove(&(*left, *right)) {
+                                    work.push_back((left, right));
+                                }
+                            } else {
+                                if output.remove(&(*right, *left)) {
+                                    work.push_back((right, left));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        output
+    }
+}
+
+#[test]
+pub fn lint_dfa_minimised() {
+    let input = r#"{
+        "start": "1",
+        "alphabet": ["a", "b"],
+        "nodes": {
+            "1": {
+                "a": ["1", "2"],
+                "b": ["1"]
+            },
+            "2": {
+                "a": ["3"],
+                "b": ["3"]
+            },
+            "3": {}
+        },
+        "final_states": ["3"]
+        }"#;
+    let unsanitary: Nfa<_> = serde_json::from_str(input).unwrap();
+    let nfa = unsanitary.check().unwrap();
+    let dfa = nfa.make_deterministic();
+    assert!(dfa.lint_states().is_empty())
 }
