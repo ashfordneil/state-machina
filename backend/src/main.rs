@@ -51,6 +51,7 @@ mod test {
     use rocket::http::Status;
     use rocket::http::ContentType;
 
+    /// Test home page ("/" or "/index.html")
     #[test]
     fn test_index() {
         let rocket = rocket();
@@ -59,7 +60,46 @@ mod test {
 
         assert_eq!(response.status(), Status::Ok);
         assert_eq!(response.content_type(), Some(ContentType::HTML));
+        assert!(response.body_string().unwrap().contains("<noscript>You need to enable JavaScript to run this app.</noscript>"));
         //assert!(response.headers().get_one("X-Special").is_some());
-        //assert_eq!(response.body_string(), Some("Expected Body.".into()));
+
+        let response = client.get("/index.html").dispatch();
+        assert_eq!(response.status(), Status::Ok);
+        assert_eq!(response.content_type(), Some(ContentType::HTML));
     }
+
+    #[test]
+    fn test_not_found() {
+        let rocket = rocket();
+        let client = Client::new(rocket).expect("valid rocket instance");
+        let response = client.get("/asdfasdfasdf").dispatch();
+        assert_eq!(response.status(), Status::NotFound);
+    }
+
+    /// Test POSTing of NFA in JSON
+    #[test]
+    fn test_submit_nfa() {
+        let rocket = rocket();
+        let client = Client::new(rocket).expect("valid rocket instance");
+
+        //Test good JSON
+        //TODO: Uncomment when ready
+        /*
+        let response = client.post("/submit")
+            .body("{}") //TODO: Place valid JSON string here
+            .header(ContentType::JSON)
+            .dispatch();
+
+        assert_eq!(response.status(), Status::Ok);
+        */
+
+        //Test empty JSON
+        let response = client.post("/submit")
+            .body("{}")
+            .header(ContentType::JSON)
+            .dispatch();
+
+        assert_eq!(response.status(), Status::BadRequest);
+    }
+    
 }
