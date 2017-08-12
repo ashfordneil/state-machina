@@ -467,6 +467,50 @@ impl Dfa {
 
         output
     }
+
+    /// Minimises the DFA.
+    pub fn minimise(&mut self) {
+        // construct reversed graph
+        let mut backtrack: HashMap<_, HashMap<&String, _>> = self.nodes
+            .iter()
+            .map(|(node, _)| (node.to_owned(), HashMap::new()))
+            .collect();
+        for (state, transforms) in &self.nodes {
+            for (letter, new_state) in transforms {
+                let mut map: &mut HashMap<String, _> = backtrack.get_mut(new_state.as_str()).unwrap();
+                let value = map.get(letter).unwrap_or_default();
+                value.insert(state.to_owned());
+                map.insert(letter.to_owned(), value);
+            }
+        }
+
+        let mut renames = HashMap::new();
+
+        // TODO -- make this allocate a _little_ less
+        let redundancies: HashSet<_> = self.lint_states()
+            .into_iter()
+            .map(|(left, right)| (left.to_owned(), right.to_owned()))
+            .collect();
+
+        for (left, right) in redundancies {
+            if !self.nodes.contains_key(&left) || !self.nodes.contains_key(&right) {
+                continue;
+            }
+
+            for (&letter, states) in &backtrack[&right] {
+                for state in states {
+                    self.nodes.get_mut(state.as_str()).unwrap().insert(letter.to_owned(), left.to_owned());
+                }
+            }
+
+            let new_name = match renames.get(&left) {
+                Some(name) => format!("{} | {}", name, right),
+                None => format!("{} | {}", left, right)
+            };
+
+            renames.insert(left, new_name);
+        }
+    }
 }
 
 #[test]
