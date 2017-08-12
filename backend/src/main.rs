@@ -11,10 +11,12 @@ extern crate rocket_contrib;
 #[cfg(test)]
 extern crate serde_json;
 
+#[cfg(test)]
+
 use rocket_contrib::Json;
 
 mod automata;
-use automata::{Nfa, Unsanitary};
+use automata::{Nfa, Dfa, Unsanitary};
 
 #[get("/")]
 fn index() -> &'static str {
@@ -22,27 +24,12 @@ fn index() -> &'static str {
     "Hello, World!"
 }
 
-// The type to represent the ID of a message.
-type ID = usize;
-
-#[derive(Serialize, Deserialize)]
-struct Message {
-        id: Option<ID>,
-            contents: String
-}
-
-// curl -X POST --data '{"id": 1, "contents":"asdf"}' http://localhost:8000/test -H "Content-Type: application/json"
-#[post("/test", format="application/json", data="<data>")]
-fn test_thing(data: Json<Message>) -> &'static str {
-    "it works!"
-}
-
 #[post("/submit", format="application/json", data="<data>")]
-fn submit_nfa(data: Json<Nfa<Unsanitary>>) -> &'static str {
-    "it works!"
+fn submit_nfa(data: Json<Nfa<Unsanitary>>) -> Json<Dfa> {
+    Json(data.into_inner().check().unwrap().make_deterministic())
 }
 
 
 fn main() {
-    rocket::ignite().mount("/", routes![index, test_thing, submit_nfa]).launch();
+    rocket::ignite().mount("/", routes![index, submit_nfa]).launch();
 }
