@@ -643,6 +643,38 @@ pub fn optimise_dfa() {
     }"#;
     let unsanitary: Nfa<_> = serde_json::from_str(input).unwrap();
     let nfa = unsanitary.check().unwrap();
-    let dfa = nfa.make_deterministic();
-    panic!("Output: {:?}", dfa.minimise());
+    let Dfa {
+        final_states,
+        start,
+        alphabet,
+        nodes,
+    } = nfa.make_deterministic().minimise();
+
+    assert_eq!(final_states, vec!["2 | 4".into()].into_iter().collect());
+    assert_eq!(start, "1 | 3".to_owned());
+    assert_eq!(alphabet, vec!["a".into(), "b".into()].into_iter().collect());
+    assert_eq!(
+        nodes,
+        vec![
+            (
+                "1 | 3".into(),
+                vec![("a".into(), "2 | 4".into()), ("b".into(), "1 | 3".into())]
+                    .into_iter()
+                    .collect(),
+            ),
+            (
+                "2 | 4".into(),
+                vec![("a".into(), "".into()), ("b".into(), "".into())]
+                    .into_iter()
+                    .collect(),
+            ),
+            (
+                "".into(),
+                vec![("a".into(), "".into()), ("b".into(), "".into())]
+                    .into_iter()
+                    .collect(),
+            ),
+        ].into_iter()
+            .collect()
+    );
 }
