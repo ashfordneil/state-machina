@@ -299,6 +299,25 @@ where
         .collect()
 }
 
+fn dead_state_name<'a, I>(states: I) -> String
+where
+    I: IntoIterator<Item = &'a String>,
+{
+    let states: HashSet<_> = states.into_iter().map(|x| x.as_str()).collect();
+    if !states.contains("dead state") {
+        "dead state".into()
+    } else {
+        let mut i = 0;
+        loop {
+            let name = format!("dead state{}", i);
+            if !states.contains(name.as_str()) {
+                break name;
+            }
+            i += 1;
+        }
+    }
+}
+
 impl Nfa<Sanitary> {
     pub fn make_deterministic(self) -> Dfa {
         let Nfa {
@@ -316,7 +335,11 @@ impl Nfa<Sanitary> {
         work.push_back(vec![nfa_start]);
 
         while let Some(node) = work.pop_front() {
-            let dfa_state = hash_states(&node);
+            let dfa_state = if node.is_empty() {
+                dead_state_name(nfa_nodes.iter().map(|(x, _)| x))
+            } else {
+                hash_states(&node)
+            };
             assert!(!nodes.contains_key(&dfa_state));
             let transition_table = alphabet
                 .iter()
@@ -328,7 +351,11 @@ impl Nfa<Sanitary> {
                         .map(|x| x.to_owned())
                         .unique()
                         .sorted();
-                    let transition_state = hash_states(&transition);
+                    let transition_state = if transition.is_empty() {
+                        dead_state_name(nfa_nodes.iter().map(|(x, _)| x))
+                    } else {
+                        hash_states(&transition)
+                    };
                     if transition != node && !nodes.contains_key(&transition_state) &&
                         !work.contains(&transition)
                     {
@@ -700,13 +727,13 @@ pub fn optimise_dfa() {
             ),
             (
                 "2 | 4".into(),
-                vec![("a".into(), "".into()), ("b".into(), "".into())]
+                vec![("a".into(), "dead state".into()), ("b".into(), "dead state".into())]
                     .into_iter()
                     .collect(),
             ),
             (
-                "".into(),
-                vec![("a".into(), "".into()), ("b".into(), "".into())]
+                "dead state".into(),
+                vec![("a".into(), "dead state".into()), ("b".into(), "dead state".into())]
                     .into_iter()
                     .collect(),
             ),
