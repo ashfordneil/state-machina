@@ -19,7 +19,7 @@ use std::path::{Path, PathBuf};
 use rocket::response::NamedFile;
 
 mod automata;
-use automata::{Nfa, Dfa, Unsanitary};
+use automata::{Dfa, Nfa, Unsanitary};
 
 #[get("/")]
 fn index() -> io::Result<NamedFile> {
@@ -31,9 +31,9 @@ fn files(file: PathBuf) -> Option<NamedFile> {
     NamedFile::open(Path::new("../frontend/build/").join(file)).ok()
 }
 
-#[post("/submit", format="application/json", data="<data>")]
+#[post("/submit", format = "application/json", data = "<data>")]
 fn submit_nfa(data: Json<Nfa<Unsanitary>>) -> Json<Dfa> {
-    Json(data.into_inner().check().unwrap().make_deterministic())
+    Json(data.into_inner().check().unwrap().make_deterministic().minimise())
 }
 
 fn rocket() -> rocket::Rocket {
@@ -63,7 +63,12 @@ mod test {
 
         assert_eq!(response.status(), Status::Ok);
         assert_eq!(response.content_type(), Some(ContentType::HTML));
-        assert!(response.body_string().unwrap().contains("<noscript>You need to enable JavaScript to run this app.</noscript>"));
+        assert!(
+            response
+                .body_string()
+                .unwrap()
+                .contains("<noscript>You need to enable JavaScript to run this app.</noscript>")
+        );
         //assert!(response.headers().get_one("X-Special").is_some());
 
         let response = client.get("/index.html").dispatch();
@@ -106,7 +111,8 @@ mod test {
             "final_states": ["3"]
         }"#;
 
-        let mut response = client.post("/submit")
+        let mut response = client
+            .post("/submit")
             .body(input)
             .header(ContentType::JSON)
             .dispatch();
@@ -123,12 +129,13 @@ mod test {
     fn test_empty_nfa() {
         let rocket = rocket();
         let client = Client::new(rocket).expect("valid rocket instance");
-        let response = client.post("/submit")
+        let response = client
+            .post("/submit")
             .body("{}")
             .header(ContentType::JSON)
             .dispatch();
 
         assert_eq!(response.status(), Status::BadRequest);
     }
-    
+
 }

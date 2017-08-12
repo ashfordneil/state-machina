@@ -148,12 +148,14 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
+<<<<<<< HEAD
+    div [ id "buttons" ]
+        [ button [ onClick ConvertToDFA, class "button" ] [ text "Convert To Deterministic"]
+        , Network.view model.network
+        ]
+=======
     div []
         [ h1 [] [ text "State Machina" ]
-        , div [ id "buttons" ]
-            [ button [ onClick ConvertToDFA, class "button" ] [ text "Convert To Deterministic"]
-            , Network.view model.network
-            ]
         , div []
             [ button [] [ text "Add State" ]
             , button [] [ text "Add Transition" ]
@@ -162,6 +164,9 @@ view model =
         , Network.view model.network
         , Errata.stateMachines
         ]
+
+
+>>>>>>> 63891bdf80de4ddca74a278b9a561b4a89add481
 
 ---- PROGRAM ----
 

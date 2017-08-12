@@ -3,8 +3,6 @@ module Main exposing (..)
 import Array
 import Dict exposing (Dict)
 import Html exposing (..)
-import Html.Attributes exposing (..)
-import Html.Events exposing (onClick)
 import Http
 import Json.Encode as Encode
 import Json.Decode as Decode
@@ -150,10 +148,6 @@ view : Model -> Html Msg
 view model =
     div []
         [ h1 [] [ text "State Machina" ]
-        , div [ id "buttons" ]
-            [ button [ onClick ConvertToDFA, class "button" ] [ text "Convert To Deterministic"]
-            , Network.view model.network
-            ]
         , div []
             [ button [] [ text "Add State" ]
             , button [] [ text "Add Transition" ]
@@ -162,6 +156,8 @@ view model =
         , Network.view model.network
         , Errata.stateMachines
         ]
+
+
 
 ---- PROGRAM ----
 
@@ -306,10 +302,5 @@ faDecoder =
         FA
         (Decode.field "start" Decode.string)
         (Decode.field "alphabet" (Decode.list Decode.string))
-<<<<<<< HEAD
-        (Decode.field "nodes" (Decode.dict (Decode.dict (Decode.string |> Decode.map List.singleton))))
-        (Decode.field "final_states" (Decode.list Decode.string))
-=======
         (Decode.field "nodes" (Decode.dict (Decode.dict (Decode.list Decode.string))))
         (Decode.field "final_states" (Decode.list Decode.string))
->>>>>>> 63891bdf80de4ddca74a278b9a561b4a89add481
