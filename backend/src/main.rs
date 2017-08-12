@@ -51,6 +51,9 @@ mod test {
     use rocket::http::Status;
     use rocket::http::ContentType;
 
+    use serde_json;
+    use automata::*;
+
     /// Test home page ("/" or "/index.html")
     #[test]
     fn test_index() {
@@ -88,19 +91,44 @@ mod test {
         let client = Client::new(rocket).expect("valid rocket instance");
 
         //Test good JSON
-        //TODO: Uncomment when ready
-        /*
-        let response = client.post("/submit")
-            .body("{}") //TODO: Place valid JSON string here
+        let input = r#"{
+            "start": "1",
+            "alphabet": ["a", "b"],
+            "nodes": {
+                "1": {
+                    "a": ["1", "2"],
+                    "b": ["1"]
+                },
+                "2": {
+                    "a": ["3"],
+                    "b": ["3"]
+                },
+                "3": {
+                    "a": ["1"],
+                    "b": ["2"]
+                }
+            },
+            "final_states": ["3"]
+        }"#;
+
+        let mut response = client.post("/submit")
+            .body(input)
             .header(ContentType::JSON)
             .dispatch();
 
         assert_eq!(response.status(), Status::Ok);
-        */
 
-        //Test empty JSON
-        let response = client
-            .post("/submit")
+        //Convert JSON to DFA
+        let body_string: &str = &(response.body_string()).unwrap();
+        let dfa_thing: Dfa = serde_json::from_str(body_string).unwrap();
+    }
+
+
+    #[test]
+    fn test_empty_nfa() {
+        let rocket = rocket();
+        let client = Client::new(rocket).expect("valid rocket instance");
+        let response = client.post("/submit")
             .body("{}")
             .header(ContentType::JSON)
             .dispatch();
