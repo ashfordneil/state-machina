@@ -1,4 +1,10 @@
-import './main.css';
-import { Main } from './Main.elm';
+// Project Dependancies
+import './main.css'
+import { Main } from "./Main"
+import setupVisPorts from "./Native/Vis"
 
-Main.embed(document.getElementById('root'));
+// Launch project code
+const main = Main.fullscreen()
+
+// ports
+setupVisPorts(main.ports)
