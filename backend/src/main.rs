@@ -11,6 +11,7 @@ extern crate rocket_contrib;
 extern crate serde_json;
 
 use rocket_contrib::Json;
+use nfa::*;
 
 mod nfa;
 
@@ -35,7 +36,12 @@ fn test_thing(data: Json<Message>) -> &'static str {
     "it works!"
 }
 
+#[post("/submit", format="application/json", data="<data>")]
+fn submit_nfa(data: Json<Nfa<Unsanitary>>) -> &'static str {
+    "it works!"
+}
+
 
 fn main() {
-    rocket::ignite().mount("/", routes![index, test_thing]).launch();
+    rocket::ignite().mount("/", routes![index, test_thing, submit_nfa]).launch();
 }
