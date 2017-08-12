@@ -11,8 +11,6 @@ extern crate rocket_contrib;
 #[cfg(test)]
 extern crate serde_json;
 
-#[cfg(test)]
-
 use rocket_contrib::Json;
 
 mod automata;
