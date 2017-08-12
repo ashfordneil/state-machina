@@ -4,6 +4,7 @@ name = "backend"
 version = "0.1.0"
 
 [dependencies]
+itertools = "0.6.1"
 rocket = "0.3.0"
 rocket_codegen = "0.3.0"
 serde = "1.0.11"

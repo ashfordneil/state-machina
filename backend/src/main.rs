@@ -2,6 +2,7 @@
 #![plugin(rocket_codegen)]
 extern crate rocket;
 extern crate serde;
+extern crate itertools;
 
 #[macro_use]
 extern crate serde_derive;
