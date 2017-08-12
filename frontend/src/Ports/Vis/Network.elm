@@ -39,6 +39,7 @@ type Msg
     = StartInit
     | InitSuccessful Bool
     | UpdateData Data
+    | DoubleClick NodeId
 
 
 initCmd : Network -> Cmd Msg
@@ -51,6 +52,10 @@ update msg model =
     case msg of
         InitSuccessful success ->
             model ! []
+
+        UpdateData data ->
+            { model | data = data }
+                ! [ updateData (model.divId, data) ]
 
         _ ->
             model ! []
@@ -219,3 +224,9 @@ port initCmdPort : Network -> Cmd msg
 
 
 port initSuccessfulPort : (Bool -> msg) -> Sub msg
+
+
+port doubleClickNodePort : (NodeId -> msg) -> Sub msg
+
+
+port updateData : (String, Data) -> Cmd msg

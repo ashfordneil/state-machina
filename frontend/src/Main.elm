@@ -3,6 +3,8 @@ module Main exposing (..)
 import Array
 import Dict exposing (Dict)
 import Html exposing (..)
+import Html.Attributes exposing (..)
+import Html.Events exposing (onClick)
 import Http
 import Json.Encode as Encode
 import Json.Decode as Decode
@@ -143,9 +145,10 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    Network.view model.network
-
-
+    div [ id "buttons" ]
+        [ button [ onClick ConvertToDFA, class "button" ] [ text "Convert To Deterministic"]
+        , Network.view model.network
+        ]
 
 ---- PROGRAM ----
 
@@ -289,5 +292,5 @@ faDecoder =
         FA
         (Decode.field "start" Decode.string)
         (Decode.field "alphabet" (Decode.list Decode.string))
-        (Decode.field "nodes" (Decode.dict (Decode.dict (Decode.list Decode.string))))
+        (Decode.field "nodes" (Decode.dict (Decode.dict (Decode.string |> Decode.map List.singleton))))
         (Decode.field "final_states" (Decode.list Decode.string))

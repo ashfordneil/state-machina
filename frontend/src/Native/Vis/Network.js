@@ -12,4 +12,8 @@ module.exports = ports => {
 
         ports.initSuccessfulPort.send(true)
     })
+
+    ports.updateData.subscribe(([divId, data]) => {
+        networkMap[divId].setData(data)
+    })
 }
