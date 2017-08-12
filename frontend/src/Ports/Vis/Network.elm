@@ -11,12 +11,14 @@ type alias NodeId =
 type alias Node =
     { id : NodeId
     , label : String
+    , color : String
     }
 
 
 type alias Edge =
     { from : NodeId
     , to : NodeId
+    , label : String
     }
 
 
@@ -74,10 +76,12 @@ type alias Options =
     , clickToUse : Bool
 
     -- , configure : ConfigureOptions
-    -- , edges : EdgesOptions
+    , edges : EdgesOptions
+
     -- , nodes : NodesOptions
     -- , groups : GroupsOptions
-    -- , layout : LayoutOptions
+    , layout : LayoutOptions
+
     -- , interaction : InteractionOptions
     -- , manipulation : ManipulationOptions
     -- , physics : PhysicsOptions
@@ -95,10 +99,12 @@ defaultOptions =
     , clickToUse = False
 
     -- , configure = defaultConfigureOptions
-    -- , edges = defaultEdgesOptions
+    , edges = defaultEdgesOptions
+
     -- , nodes = defaultNodesOptions
     -- , groups = defaultGroupsOptions
-    -- , layout = defaultLayoutOptions
+    , layout = defaultLayoutOptions
+
     -- , interaction = defaultInteractionOptions
     -- , manipulation = defaultManipulationOptions
     -- , physics = defaultPhysicsOptions
@@ -170,6 +176,42 @@ type alias LocaleString =
 --     , showButton : True
 --     }
 -- ports
+
+
+type alias EdgesOptions =
+    { arrows : Maybe String
+    , font :
+        { color : String
+        , size : Int
+        , face : String
+        , strokeWidth : Int
+        , strokeColor : String
+        , align : String
+        }
+    }
+
+
+defaultEdgesOptions : EdgesOptions
+defaultEdgesOptions =
+    { arrows = Nothing
+    , font =
+        { color = "#343434"
+        , size = 14
+        , face = "arial"
+        , strokeWidth = 2
+        , strokeColor = "#ffffff"
+        , align = "horizontal"
+        }
+    }
+
+
+type alias LayoutOptions =
+    { randomSeed : Maybe Int }
+
+
+defaultLayoutOptions : LayoutOptions
+defaultLayoutOptions =
+    { randomSeed = Nothing }
 
 
 port initCmdPort : Network -> Cmd msg
