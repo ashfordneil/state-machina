@@ -1,7 +1,7 @@
 module UI exposing (..)
 
-import Html exposing (Html, div, button, text)
-import Html.Attributes exposing (class, id)
+import Html exposing (..)
+import Html.Attributes exposing (class, disabled, id)
 import Html.Events exposing (onClick)
 import Ports.Vis.Network as Network exposing (NodeId, Edge)
 
@@ -9,9 +9,11 @@ import Ports.Vis.Network as Network exposing (NodeId, Edge)
 type Msg
     = EdgeSelected Edge
     | Go
+    | UpdateEdge Edge
     | AddState
     | AddTransition
     | Selected String
+    | Deselect
 
 
 type Model
@@ -41,7 +43,22 @@ update msg model =
             )
 
         ( Selected sym, EditTransition tr ) ->
-            ( EditTransition { tr | selected = Just sym }, Cmd.none )
+            ( EditTransition
+                { tr
+                    | selected =
+                        if List.length tr.symbols > 1 then
+                            Just sym
+                        else
+                            Nothing
+                }
+            , Cmd.none
+            )
+
+        ( Deselect, EditTransition tr ) ->
+            ( EditTransition { tr | selected = Nothing }, Cmd.none )
+
+        ( UpdateEdge _, _ ) ->
+            ( Unselected, Cmd.none )
 
         _ ->
             ( model, Cmd.none )
@@ -69,27 +86,67 @@ viewInput model =
 editTransition : Transition -> Html Msg
 editTransition tr =
     let
+        selected =
+            case tr.selected of
+                Just _ ->
+                    True
+
+                _ ->
+                    False
+
         letters =
-            tr.symbols
-                |> List.map
-                    (\sym ->
-                        let
-                            selected =
-                                (case tr.selected of
-                                    Just sym2 ->
-                                        sym == sym2
+            div []
+                ((tr.symbols
+                    |> List.map
+                        (\sym ->
+                            let
+                                selected =
+                                    (case tr.selected of
+                                        Just sym2 ->
+                                            sym == sym2
 
-                                    _ ->
-                                        False
-                                )
+                                        _ ->
+                                            False
+                                    )
 
-                            style =
-                                if selected then
-                                    [ class "selected-button" ]
-                                else
-                                    [ class "button" ]
-                        in
-                            button (style ++ [ onClick (Selected sym) ]) [ text sym ]
-                    )
+                                style =
+                                    if selected then
+                                        [ class "selected-button" ]
+                                    else
+                                        [ class "button" ]
+                            in
+                                button (style ++ [ onClick (Selected sym) ]) [ text sym ]
+                        )
+                 )
+                    ++ [ button
+                            [ onClick Deselect
+                            , disabled (not selected)
+                            , class "button"
+                            ]
+                            [ text "Cancel" ]
+                       ]
+                )
     in
-        div [id "edit-transition"] letters
+        div [ id "edit-transition" ]
+            [ h2 [] [ text "Edit Transition" ]
+            , letters
+            , div [ class "footer" ]
+                [ button
+                    [ class "button"
+                    , disabled selected
+                    ]
+                    [ text "+ add symbol" ]
+                , button
+                    [ class "button"
+                    , disabled (not selected)
+                    , onClick
+                        (UpdateEdge
+                            { from = tr.from
+                            , to = tr.to
+                            , label = String.join "/" (List.filter (\x -> Just x /= tr.selected) tr.symbols)
+                            }
+                        )
+                    ]
+                    [ text "- remove symbol" ]
+                ]
+            ]
