@@ -26,17 +26,17 @@ function getChildNodeByClass(element, className) {
     return foundElement;
 }
 
-function editNode(container, data, callback) {
-    getChildNodeByClass(container, 'node-id').value = data.label;
-    getChildNodeByClass(container, 'node-saveButton').onclick = saveNodeData.bind(this, container, data, callback);
+function editNode(container, data, callback, ports, network) {
+    getChildNodeByClass(container, 'node-id').value = data.label == 'new' ? '' : data.label;
+    getChildNodeByClass(container, 'node-saveButton').onclick = saveNodeData.bind(this, container, data, callback, ports, network);
     getChildNodeByClass(container, 'node-cancelButton').onclick = cancelNodeEdit.bind(this, container, callback);
     getChildNodeByClass(container, 'node-popUp').style.display = 'block';
 }
 
-function editEdgeWithoutDrag(container, data, callback) {
+function editEdgeWithoutDrag(container, data, callback, ports, network) {
     // filling in the popup DOM elements
-    getChildNodeByClass(container, 'edge-label').value = data.label;
-    getChildNodeByClass(container, 'edge-saveButton').onclick = saveEdgeData.bind(this, container, data, callback);
+    getChildNodeByClass(container, 'edge-label').value = data.label == 'new' ? '' : data.label;
+    getChildNodeByClass(container, 'edge-saveButton').onclick = saveEdgeData.bind(this, container, data, callback, ports, network);
     getChildNodeByClass(container, 'edge-cancelButton').onclick = cancelEdgeEdit.bind(this, container, callback);
     getChildNodeByClass(container, 'edge-popUp').style.display = 'block';
 }
@@ -44,6 +44,7 @@ function editEdgeWithoutDrag(container, data, callback) {
 function clearNodePopUp(container) {
       getChildNodeByClass(container, 'node-saveButton').onclick = null;
       getChildNodeByClass(container, 'node-cancelButton').onclick = null;
+      getChildNodeByClass(container, 'accepting-checkbox').checked = false;
       getChildNodeByClass(container, 'node-popUp').style.display = 'none';
 }
 
@@ -52,15 +53,20 @@ function cancelNodeEdit(container, callback) {
     callback(null);
 }
 
-function saveNodeData(container, data, callback) {
+function saveNodeData(container, data, callback, ports, network) {
     data.id = getChildNodeByClass(container, 'node-id').value
     data.label = getChildNodeByClass(container, 'node-id').value;
     if (data.color != startColor || data.color != normalColor || data.color != finishColor) {
-        data.color = normalColor
+        if (getChildNodeByClass(container, 'accepting-checkbox').checked) {
+            data.color = finishColor
+        } else {
+            data.color = normalColor
+        }
     }
     data.shadow = false
-    clearNodePopUp(container);
-    callback(data);
+    clearNodePopUp(container)
+    callback(data)
+    sendCurrentData(ports, network)
 }
 
 function clearEdgePopUp(container) {
@@ -74,14 +80,29 @@ function cancelEdgeEdit(container, callback) {
     callback(null);
 }
 
-function saveEdgeData(container, data, callback) {
+function saveEdgeData(container, data, callback, ports, network) {
     if (typeof data.to === 'object')
         data.to = data.to.id
     if (typeof data.from === 'object')
         data.from = data.from.id
     data.label = getChildNodeByClass(container, 'edge-label').value;
-    clearEdgePopUp(container);
-    callback(data);
+    clearEdgePopUp(container)
+    callback(data)
+    sendCurrentData(ports, network)
+}
+
+
+function sendCurrentData(ports, network) {
+    let retData = { nodes: [], edges: [] }
+    for (let id in network.body.data.edges._data) {
+        retData.edges.push(network.body.data.edges._data[id])
+    }
+    for (let id in network.body.data.nodes._data) {
+        const node = network.body.data.nodes._data[id]
+        retData.nodes.push(node)
+    }
+
+    ports.dataChangedPort.send(retData)
 }
 
 
@@ -91,31 +112,14 @@ module.exports = ports => {
     ports.initCmdPort.subscribe(({ divId, data, options }) => {
         const container = document.getElementById(divId);
 
-        function sendCurrentData() {
-            setTimeout(() => {
-                let retData = { nodes: [], edges: [] }
-                for (let id in networkMap[divId].body.data.edges._data) {
-                    retData.edges.push(networkMap[divId].body.data.edges._data[id])
-                }
-                for (let id in networkMap[divId].body.data.nodes._data) {
-                    const node = networkMap[divId].body.data.nodes._data[id]
-                    retData.nodes.push(node)
-                }
-
-                ports.dataChangedPort.send(retData)
-            }, 1000)
-        }
-
         options.manipulation.addNode = (data, callback) => {
             getChildNodeByClass(container, "node-operation").innerHTML = "Add State"
-            editNode(container, data, callback)
-            sendCurrentData()
+            editNode(container, data, callback, ports, networkMap[divId])
         }
 
         options.manipulation.editNode = (data, callback) => {
             getChildNodeByClass(container, "node-operation").innerHTML = "Edit State"
-            editNode(container, data, callback)
-            sendCurrentData()
+            editNode(container, data, callback, ports, networkMap[divId])
         }
 
         options.manipulation.addEdge = (data, callback) => {
@@ -126,15 +130,13 @@ module.exports = ports => {
                 }
             }
             getChildNodeByClass(container, "edge-operation").innerHTML = "Add Transition"
-            editEdgeWithoutDrag(container, data, callback)
-            sendCurrentData()
+            editEdgeWithoutDrag(container, data, callback, ports, networkMap[divId])
         }
 
         options.manipulation.editEdge = {
             editWithoutDrag: (data, callback) => {
                 getChildNodeByClass(container, "edge-operation").innerHTML = "Edit Transition"
-                editEdgeWithoutDrag(container, data, callback)
-                sendCurrentData()
+                editEdgeWithoutDrag(container, data, callback, ports, networkMap[divId])
             }
         }
 
