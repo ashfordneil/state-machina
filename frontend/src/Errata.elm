@@ -33,7 +33,7 @@ stateMachines =
                     [ href "http://blog.markshead.com/869/state-machines-computer-science/"
                     , target "_blank"
                     ]
-                    [ text "State Machines - Basics of Comuter Science"
+                    [ text "State Machines - Basics of Computer Science"
                     ]
                 ]
             , li []
