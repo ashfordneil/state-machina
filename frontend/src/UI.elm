@@ -1,33 +1,50 @@
 module UI exposing (..)
 
 import Html exposing (Html, div, button, text)
-import Html.Attributes exposing (class)
+import Html.Attributes exposing (class, id)
 import Html.Events exposing (onClick)
+import Ports.Vis.Network as Network exposing (NodeId, Edge)
 
 
 type Msg
-    = AddState
-    | AddStateResult
-    | AddTransition
-    | AddTransitionResult
+    = EdgeSelected Edge
     | Go
+    | AddState
+    | AddTransition
+    | Selected String
 
 
 type Model
     = Unselected
-    | AddingState StateForm
-    | AddingTransition
+    | EditTransition Transition
 
 
-type alias StateForm =
-    { name : String
-    , accepting : Bool
+type alias Transition =
+    { from : NodeId
+    , to : NodeId
+    , symbols : List String
+    , selected : Maybe String
     }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
+    case ( msg, model ) of
+        ( EdgeSelected edge, _ ) ->
+            ( EditTransition
+                { from = edge.from
+                , to = edge.to
+                , symbols = String.split "/" edge.label
+                , selected = Nothing
+                }
+            , Cmd.none
+            )
+
+        ( Selected sym, EditTransition tr ) ->
+            ( EditTransition { tr | selected = Just sym }, Cmd.none )
+
+        _ ->
+            ( model, Cmd.none )
 
 
 viewButtons : Model -> Html Msg
@@ -41,4 +58,38 @@ viewButtons model =
 
 viewInput : Model -> Html Msg
 viewInput model =
-    div [] []
+    case model of
+        Unselected ->
+            div [] []
+
+        EditTransition tr ->
+            editTransition tr
+
+
+editTransition : Transition -> Html Msg
+editTransition tr =
+    let
+        letters =
+            tr.symbols
+                |> List.map
+                    (\sym ->
+                        let
+                            selected =
+                                (case tr.selected of
+                                    Just sym2 ->
+                                        sym == sym2
+
+                                    _ ->
+                                        False
+                                )
+
+                            style =
+                                if selected then
+                                    [ class "selected-button" ]
+                                else
+                                    [ class "button" ]
+                        in
+                            button (style ++ [ onClick (Selected sym) ]) [ text sym ]
+                    )
+    in
+        div [id "edit-transition"] letters
