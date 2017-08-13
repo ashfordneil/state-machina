@@ -10,9 +10,8 @@ import Http
 import Json.Decode as Decode
 import Json.Encode as Encode
 import List.Extra
-import Ports.Vis.Network as Network exposing (Network, NodeId, Msg(..))
+import Ports.Vis.Network as Network exposing (Msg(..), Network, NodeId)
 import Set
-import Errata
 import Unwrap
 
 
@@ -112,14 +111,6 @@ init =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Network msg ->
-            let
-                ( networkModel, networkCmd ) =
-                    Network.update msg model.network
-            in
-            { model | network = networkModel }
-                ! [ Cmd.map Network networkCmd ]
-
         ConvertToDFA ->
             { model | loading = True }
                 ! [ Http.post "/submit" (Http.jsonBody (encodeFA model.currentFA)) faDecoder
@@ -140,6 +131,22 @@ update msg model =
                 | currentFA = fa
                 , network = networkModel
             }
+                ! [ Cmd.map Network networkCmd ]
+
+        Network msg ->
+            let
+                currentFA =
+                    case msg of
+                        DataChanged data ->
+                            networkData2fa data
+
+                        _ ->
+                            model.currentFA
+
+                ( networkModel, networkCmd ) =
+                    Network.update msg model.network
+            in
+            { model | network = networkModel, currentFA = currentFA }
                 ! [ Cmd.map Network networkCmd ]
 
 
@@ -176,16 +183,28 @@ main =
         , subscriptions = subscriptions
         }
 
+
 networkData2fa : Network.Data -> FA
 networkData2fa network =
-    let alphabet = networkData2Alphabet network
-        start = networkData2StartNode network
-        nodes = networkData2Nodes network
-        final_states = networkData2FinalStates network
-    in { alphabet = alphabet
+    let
+        alphabet =
+            networkData2Alphabet network
+
+        start =
+            networkData2StartNode network
+
+        nodes =
+            networkData2Nodes network
+
+        final_states =
+            networkData2FinalStates network
+    in
+    { alphabet = alphabet
     , start = start
     , nodes = nodes
-    , final_states = final_states}
+    , final_states = final_states
+    }
+
 
 networkData2Alphabet : Network.Data -> List InputToken
 networkData2Alphabet network =
@@ -195,6 +214,7 @@ networkData2Alphabet network =
         |> Set.fromList
         |> Set.toList
 
+
 networkData2StartNode : Network.Data -> NodeId
 networkData2StartNode network =
     network.nodes
@@ -203,32 +223,41 @@ networkData2StartNode network =
         |> List.head
         |> Unwrap.maybe
 
+
 createOrAppend : a -> Maybe (List a) -> Maybe (List a)
-createOrAppend x xs = Just ((Maybe.withDefault [] xs) ++ [x])
+createOrAppend x xs =
+    Just (Maybe.withDefault [] xs ++ [ x ])
 
 
 networkData2Nodes : Network.Data -> Dict NodeId (Dict InputToken (List NodeId))
 networkData2Nodes network =
-    let initialState = network.nodes
-        |> List.map (\x -> (x.id, Dict.empty))
-        |> Dict.fromList
-
-    in network.edges
-        |> List.concatMap (\x -> (String.split "/" x.label) 
-            |> List.map (\y -> {from = x.from, to = x.to, letter = y}))
+    let
+        initialState =
+            network.nodes
+                |> List.map (\x -> ( x.id, Dict.empty ))
+                |> Dict.fromList
+    in
+    network.edges
+        |> List.concatMap
+            (\x ->
+                String.split "/" x.label
+                    |> List.map (\y -> { from = x.from, to = x.to, letter = y })
+            )
         |> List.foldl
             -- a -> b -> b
             (\edge maps ->
-                Dict.update edge.from 
-                    (\transforms -> transforms
-                        |> Maybe.withDefault Dict.empty
-                        |> Dict.update edge.letter (createOrAppend edge.to)
-                        |> Just
+                Dict.update edge.from
+                    (\transforms ->
+                        transforms
+                            |> Maybe.withDefault Dict.empty
+                            |> Dict.update edge.letter (createOrAppend edge.to)
+                            |> Just
                     )
                     maps
             )
             -- b
             initialState
+
 
 networkData2FinalStates : Network.Data -> List NodeId
 networkData2FinalStates network =
@@ -237,6 +266,7 @@ networkData2FinalStates network =
         |> List.map (\x -> x.id)
         |> Set.fromList
         |> Set.toList
+
 
 fa2networkData : FA -> Network.Data
 fa2networkData fa =

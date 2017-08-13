@@ -29,7 +29,7 @@ function getChildNodeByClass(element, className) {
 function editNode(container, data, callback) {
     getChildNodeByClass(container, 'node-id').value = data.label;
     getChildNodeByClass(container, 'node-saveButton').onclick = saveNodeData.bind(this, container, data, callback);
-    getChildNodeByClass(container, 'node-cancelButton').onclick = clearNodePopUp.bind(this, container);
+    getChildNodeByClass(container, 'node-cancelButton').onclick = cancelNodeEdit.bind(this, container, callback);
     getChildNodeByClass(container, 'node-popUp').style.display = 'block';
 }
 
@@ -91,30 +91,31 @@ module.exports = ports => {
     ports.initCmdPort.subscribe(({ divId, data, options }) => {
         const container = document.getElementById(divId);
 
+        function sendCurrentData() {
+            setTimeout(() => {
+                let retData = { nodes: [], edges: [] }
+                for (let id in networkMap[divId].body.data.edges._data) {
+                    retData.edges.push(networkMap[divId].body.data.edges._data[id])
+                }
+                for (let id in networkMap[divId].body.data.nodes._data) {
+                    const node = networkMap[divId].body.data.nodes._data[id]
+                    retData.nodes.push(node)
+                }
+
+                ports.dataChangedPort.send(retData)
+            }, 1000)
+        }
+
         options.manipulation.addNode = (data, callback) => {
             getChildNodeByClass(container, "node-operation").innerHTML = "Add State"
             editNode(container, data, callback)
-            
-            let retData = { nodes: [], edges: [] }
-            for (let id in networkMap[divId].body.data.edges._data) {
-                const label = networkMap[divId].body.data.edges._data[id].label
-                let data = JSON.parse(id)
-                data.label = label
-                retData.edges.push(data)
-            }
-            for (let id in networkMap[divId].body.data.nodes._data) {
-                const node = networkMap[divId].body.data.nodes._data[id]
-                retData.nodes.push(node)
-            }
-            console.log(retData)
-
-            ports.dataChangedPort.send(retData)
+            sendCurrentData()
         }
 
         options.manipulation.editNode = (data, callback) => {
             getChildNodeByClass(container, "node-operation").innerHTML = "Edit State"
             editNode(container, data, callback)
-            ports.dataChangedPort.send(networkMap[divId].data)
+            sendCurrentData()
         }
 
         options.manipulation.addEdge = (data, callback) => {
@@ -126,14 +127,14 @@ module.exports = ports => {
             }
             getChildNodeByClass(container, "edge-operation").innerHTML = "Add Transition"
             editEdgeWithoutDrag(container, data, callback)
-            ports.dataChangedPort.send(networkMap[divId].data)
+            sendCurrentData()
         }
 
         options.manipulation.editEdge = {
             editWithoutDrag: (data, callback) => {
                 getChildNodeByClass(container, "edge-operation").innerHTML = "Edit Transition"
                 editEdgeWithoutDrag(container, data, callback)
-                ports.dataChangedPort.send(networkMap[divId].data)
+                sendCurrentData()
             }
         }
 
