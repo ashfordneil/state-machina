@@ -106,7 +106,7 @@ impl Nfa<Unsanitary> {
         }
 
         if let Some(invalid_state) = nodes.iter().map(|(state, _)| state).find(|&state| {
-            state.contains("+") || state.contains("|") || state.is_empty()
+            /*state.contains("+") || state.contains("|") || */ state.is_empty()
         }) {
             return Err(NfaError::InvalidStateName(invalid_state.to_owned()));
         }
