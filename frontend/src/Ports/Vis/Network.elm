@@ -38,9 +38,8 @@ type alias Network =
 type Msg
     = StartInit
     | InitSuccessful Bool
-    | EdgeSelected Edge
     | UpdateData Data
-    | DoubleClick NodeId
+    | DataChanged Data
 
 
 initCmd : Network -> Cmd Msg
@@ -56,7 +55,10 @@ update msg model =
 
         UpdateData data ->
             { model | data = data }
-                ! [ updateData ( model.divId, data ) ]
+                ! [ updateDataPort ( model.divId, data ) ]
+
+        DataChanged data ->
+            { model | data = data } ! []
 
         _ ->
             model ! []
@@ -66,6 +68,7 @@ subscriptions : Network -> Sub Msg
 subscriptions model =
     Sub.batch
         [ initSuccessfulPort InitSuccessful
+        , dataChangedPort DataChanged
         ]
 
 
@@ -79,18 +82,9 @@ view model =
                 []
             , table [ attribute "style" "margin:auto;" ]
                 [ tr []
-                    [ td []
-                        [ text "id" ]
+                    [ td [] [ text "name" ]
                     , td []
                         [ input [ class "node-id", value "new value" ]
-                            []
-                        ]
-                    ]
-                , tr []
-                    [ td []
-                        [ text "label" ]
-                    , td []
-                        [ input [ class "node-label", value "new value" ]
                             []
                         ]
                     ]
@@ -108,13 +102,14 @@ view model =
             , table [ attribute "style" "margin:auto;" ]
                 [ tr []
                     [ td []
-                        [ text "label" ]
+                        [ text "Symbols" ]
                     , td []
                         [ input [ class "edge-label", value "new value" ]
                             []
                         ]
                     ]
                 ]
+            , p [] [ text "Multiple symbols must be '/' separated" ]
             , input [ class "edge-saveButton", type_ "button", value "save" ]
                 []
             , input [ class "edge-cancelButton", type_ "button", value "cancel" ]
@@ -290,4 +285,7 @@ port initCmdPort : Network -> Cmd msg
 port initSuccessfulPort : (Bool -> msg) -> Sub msg
 
 
-port updateData : ( String, Data ) -> Cmd msg
+port updateDataPort : ( String, Data ) -> Cmd msg
+
+
+port dataChangedPort : (Data -> msg) -> Sub msg
