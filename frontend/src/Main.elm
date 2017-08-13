@@ -2,28 +2,27 @@ module Main exposing (..)
 
 import Array
 import Dict exposing (Dict)
+import Errata
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (onClick)
 import Http
-import Json.Encode as Encode
 import Json.Decode as Decode
+import Json.Encode as Encode
 import List.Extra
-import Ports.Vis.Network as Network exposing (Network, NodeId, Msg(..))
-import Errata
-import UI
+import Ports.Vis.Network as Network exposing (Msg(..), Network, NodeId)
 import Unwrap
 
 
 type Msg
     = Network Network.Msg
-    | UI UI.Msg
+    | ConvertToDFA
     | ConvertToDFAResult (Result Http.Error FA)
 
 
 type alias Model =
     { currentFA : FA
     , network : Network
-    , ui : UI.Model
     , loading : Bool
     }
 
@@ -89,82 +88,41 @@ init =
 
                     defaultLayoutOptions =
                         defaultOptions.layout
-                in
-                    { defaultOptions
-                        | height = "1000px"
-                        , edges = { defaultEdgesOptions | arrows = Just "to" }
-                        , layout = { defaultLayoutOptions | randomSeed = Just 0 }
-                    }
-            }
 
-        ui =
-            UI.Unselected
+                    defaultManipulationOptions =
+                        defaultOptions.manipulation
+                in
+                { defaultOptions
+                    | height = "700px"
+                    , edges = { defaultEdgesOptions | arrows = Just "to" }
+                    , layout = { defaultLayoutOptions | randomSeed = Just 0 }
+                    , manipulation = { defaultManipulationOptions | enabled = True }
+                }
+            }
     in
-        { network = network
-        , currentFA = currentFA
-        , ui = ui
-        , loading = False
-        }
-            ! [ Cmd.map Network (Network.initCmd network) ]
+    { network = network
+    , currentFA = currentFA
+    , loading = False
+    }
+        ! [ Cmd.map Network (Network.initCmd network) ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Network (EdgeSelected edge) ->
-            let
-                ( uiModel, uiCmd ) =
-                    UI.update (UI.EdgeSelected edge) model.ui
-            in
-                { model | ui = uiModel }
-                    ! [ Cmd.map UI uiCmd ]
-
         Network msg ->
             let
                 ( networkModel, networkCmd ) =
                     Network.update msg model.network
             in
-                { model | network = networkModel }
-                    ! [ Cmd.map Network networkCmd ]
+            { model | network = networkModel }
+                ! [ Cmd.map Network networkCmd ]
 
-        UI UI.Go ->
+        ConvertToDFA ->
             { model | loading = True }
                 ! [ Http.post "/submit" (Http.jsonBody (encodeFA model.currentFA)) faDecoder
                         |> Http.send ConvertToDFAResult
                   ]
-
-        UI (UI.UpdateEdge edge) ->
-            let new_model = 
-            { model
-                | network =
-                    let
-                        network =
-                            model.network
-                    in
-                        { network
-                            | data =
-                                let
-                                    data =
-                                        model.network.data
-                                in
-                                    { data
-                                        | edges =
-                                            edge
-                                                :: (List.filter (\x -> x.from /= edge.from || x.to /= edge.to) 
-                                                model.network.data.edges)
-                                    }
-                        }
-            }
-            in new_model ! [ let (model_, cmd) = Network.update (Network.UpdateData new_model.network.data) model.network
-                in Cmd.map Network cmd]
-
-        UI msg ->
-            let
-                ( uiModel, uiCmd ) =
-                    UI.update msg model.ui
-            in
-                { model | ui = uiModel }
-                    ! [ Cmd.map UI uiCmd ]
 
         ConvertToDFAResult result ->
             let
@@ -176,11 +134,11 @@ update msg model =
                         (fa |> fa2networkData |> Network.UpdateData)
                         model.network
             in
-                { model
-                    | currentFA = fa
-                    , network = networkModel
-                }
-                    ! [ Cmd.map Network networkCmd ]
+            { model
+                | currentFA = fa
+                , network = networkModel
+            }
+                ! [ Cmd.map Network networkCmd ]
 
 
 subscriptions : Model -> Sub Msg
@@ -196,9 +154,9 @@ view : Model -> Html Msg
 view model =
     div [ class "container" ]
         [ h1 [] [ text "State Machina" ]
-        , Html.map UI (UI.viewButtons model.ui)
         , Network.view model.network
-        , Html.map UI (UI.viewInput model.ui)
+        , div [ id "buttons" ]
+            [ button [ onClick ConvertToDFA, class "button" ] [ text "OPTIMISE" ] ]
         , Errata.stateMachines
         ]
 
@@ -226,7 +184,7 @@ fa2networkData fa =
         nodes =
             fa2networkNodes fa
     in
-        { nodes = nodes, edges = edges }
+    { nodes = nodes, edges = edges }
 
 
 fa2networkEdges : FA -> List Network.Edge
@@ -262,24 +220,24 @@ fa2networkEdges fa =
                                 )
                                 list
                     in
-                        case maybeEdgeAlongSamePathIdx of
-                            Just samePathIdx ->
-                                let
-                                    combinedEdge =
-                                        list
-                                            |> List.Extra.getAt samePathIdx
-                                            |> Unwrap.maybe
-                                            |> (\samePathEdge ->
-                                                    { samePathEdge | label = samePathEdge.label ++ "/" ++ edge.label }
-                                               )
-                                in
+                    case maybeEdgeAlongSamePathIdx of
+                        Just samePathIdx ->
+                            let
+                                combinedEdge =
                                     list
-                                        |> Array.fromList
-                                        |> Array.set samePathIdx combinedEdge
-                                        |> Array.toList
+                                        |> List.Extra.getAt samePathIdx
+                                        |> Unwrap.maybe
+                                        |> (\samePathEdge ->
+                                                { samePathEdge | label = samePathEdge.label ++ "/" ++ edge.label }
+                                           )
+                            in
+                            list
+                                |> Array.fromList
+                                |> Array.set samePathIdx combinedEdge
+                                |> Array.toList
 
-                            Nothing ->
-                                edge :: list
+                        Nothing ->
+                            edge :: list
             )
             []
 
@@ -296,21 +254,21 @@ fa2networkNodes fa =
         finishColor =
             "#F34236"
     in
-        fa.nodes
-            |> Dict.keys
-            |> List.map
-                (\nodeId ->
-                    { id = nodeId
-                    , label = nodeId
-                    , color =
-                        if List.member nodeId fa.final_states then
-                            finishColor
-                        else if nodeId == fa.start then
-                            startColor
-                        else
-                            normalColor
-                    }
-                )
+    fa.nodes
+        |> Dict.keys
+        |> List.map
+            (\nodeId ->
+                { id = nodeId
+                , label = nodeId
+                , color =
+                    if List.member nodeId fa.final_states then
+                        finishColor
+                    else if nodeId == fa.start then
+                        startColor
+                    else
+                        normalColor
+                }
+            )
 
 
 encodeFA : FA -> Encode.Value
@@ -320,25 +278,25 @@ encodeFA fa =
             List.map Encode.string
                 >> Encode.list
     in
-        [ ( "start", Encode.string fa.start )
-        , ( "alphabet", fa.alphabet |> encodeStrList )
-        , ( "final_states", fa.final_states |> encodeStrList )
-        , ( "nodes"
-          , fa.nodes
-                |> Dict.toList
-                |> List.map
-                    (\( nodeId, inputToken2connections ) ->
-                        ( nodeId
-                        , inputToken2connections
-                            |> Dict.toList
-                            |> List.map (Tuple.mapSecond encodeStrList)
-                            |> Encode.object
-                        )
+    [ ( "start", Encode.string fa.start )
+    , ( "alphabet", fa.alphabet |> encodeStrList )
+    , ( "final_states", fa.final_states |> encodeStrList )
+    , ( "nodes"
+      , fa.nodes
+            |> Dict.toList
+            |> List.map
+                (\( nodeId, inputToken2connections ) ->
+                    ( nodeId
+                    , inputToken2connections
+                        |> Dict.toList
+                        |> List.map (Tuple.mapSecond encodeStrList)
+                        |> Encode.object
                     )
-                |> Encode.object
-          )
-        ]
+                )
             |> Encode.object
+      )
+    ]
+        |> Encode.object
 
 
 faDecoder : Decode.Decoder FA

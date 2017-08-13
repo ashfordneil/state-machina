@@ -1,8 +1,7 @@
 port module Ports.Vis.Network exposing (..)
 
-import Html exposing (Html, div)
-import Html.Attributes exposing (id)
-import Unwrap
+import Html exposing (..)
+import Html.Attributes exposing (..)
 
 
 type alias NodeId =
@@ -67,21 +66,62 @@ subscriptions : Network -> Sub Msg
 subscriptions model =
     Sub.batch
         [ initSuccessfulPort InitSuccessful
-        , edgeSelected
-            (\x ->
-                EdgeSelected
-                    (model.data.edges
-                        |> List.filter (\y -> y.to == x.to && y.from == x.from)
-                        |> List.head
-                        |> Unwrap.maybe
-                    )
-            )
         ]
 
 
 view : Network -> Html msg
 view model =
-    div [ id model.divId ] []
+    div [ id model.divId, class "visjs-network" ]
+        [ div [ class "node-popUp" ]
+            [ span [ class "node-operation" ]
+                [ text "node" ]
+            , br []
+                []
+            , table [ attribute "style" "margin:auto;" ]
+                [ tr []
+                    [ td []
+                        [ text "id" ]
+                    , td []
+                        [ input [ class "node-id", value "new value" ]
+                            []
+                        ]
+                    ]
+                , tr []
+                    [ td []
+                        [ text "label" ]
+                    , td []
+                        [ input [ class "node-label", value "new value" ]
+                            []
+                        ]
+                    ]
+                ]
+            , input [ class "node-saveButton", type_ "button", value "save" ]
+                []
+            , input [ class "node-cancelButton", type_ "button", value "cancel" ]
+                []
+            ]
+        , div [ class "edge-popUp" ]
+            [ span [ class "edge-operation" ]
+                [ text "edge" ]
+            , br []
+                []
+            , table [ attribute "style" "margin:auto;" ]
+                [ tr []
+                    [ td []
+                        [ text "label" ]
+                    , td []
+                        [ input [ class "edge-label", value "new value" ]
+                            []
+                        ]
+                    ]
+                ]
+            , input [ class "edge-saveButton", type_ "button", value "save" ]
+                []
+            , input [ class "edge-cancelButton", type_ "button", value "cancel" ]
+                []
+            ]
+        , div [ class "canvas-container" ] []
+        ]
 
 
 type alias Options =
@@ -102,7 +142,8 @@ type alias Options =
     , layout : LayoutOptions
 
     -- , interaction : InteractionOptions
-    -- , manipulation : ManipulationOptions
+    , manipulation : ManipulationOptions
+
     -- , physics : PhysicsOptions
     }
 
@@ -125,7 +166,8 @@ defaultOptions =
     , layout = defaultLayoutOptions
 
     -- , interaction = defaultInteractionOptions
-    -- , manipulation = defaultManipulationOptions
+    , manipulation = defaultManipulationOptions
+
     -- , physics = defaultPhysicsOptions
     }
 
@@ -233,13 +275,19 @@ defaultLayoutOptions =
     { randomSeed = Nothing }
 
 
+type alias ManipulationOptions =
+    { enabled : Bool }
+
+
+defaultManipulationOptions : ManipulationOptions
+defaultManipulationOptions =
+    { enabled = False }
+
+
 port initCmdPort : Network -> Cmd msg
 
 
 port initSuccessfulPort : (Bool -> msg) -> Sub msg
-
-
-port edgeSelected : ({ from : String, to : String } -> msg) -> Sub msg
 
 
 port updateData : ( String, Data ) -> Cmd msg
