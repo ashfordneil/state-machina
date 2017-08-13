@@ -43,10 +43,22 @@ update msg model =
             )
 
         ( Selected sym, EditTransition tr ) ->
-            ( EditTransition { tr | selected = Just sym }, Cmd.none )
+            ( EditTransition
+                { tr
+                    | selected =
+                        if List.length tr.symbols > 1 then
+                            Just sym
+                        else
+                            Nothing
+                }
+            , Cmd.none
+            )
 
         ( Deselect, EditTransition tr ) ->
             ( EditTransition { tr | selected = Nothing }, Cmd.none )
+
+        ( UpdateEdge _, _ ) ->
+            ( Unselected, Cmd.none )
 
         _ ->
             ( model, Cmd.none )
