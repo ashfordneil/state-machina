@@ -9,6 +9,7 @@ import Json.Encode as Encode
 import Json.Decode as Decode
 import List.Extra
 import Ports.Vis.Network as Network exposing (Network, NodeId, Msg(..))
+import Set
 import Errata
 import UI
 import Unwrap
@@ -216,6 +217,67 @@ main =
         , subscriptions = subscriptions
         }
 
+networkData2fa : Network.Data -> FA
+networkData2fa network =
+    let alphabet = networkData2Alphabet network
+        start = networkData2StartNode network
+        nodes = networkData2Nodes network
+        final_states = networkData2FinalStates network
+    in { alphabet = alphabet
+    , start = start
+    , nodes = nodes
+    , final_states = final_states}
+
+networkData2Alphabet : Network.Data -> List InputToken
+networkData2Alphabet network =
+    network.edges
+        |> List.map (\x -> x.label)
+        |> List.concatMap (String.split "/")
+        |> Set.fromList
+        |> Set.toList
+
+networkData2StartNode : Network.Data -> NodeId
+networkData2StartNode network =
+    network.nodes
+        |> List.filter (\x -> x.color == "#4BAE4F")
+        |> List.map (\x -> x.id)
+        |> List.head
+        |> Unwrap.maybe
+
+createOrAppend : a -> Maybe (List a) -> Maybe (List a)
+createOrAppend x xs = Just ((Maybe.withDefault [] xs) ++ [x])
+
+
+networkData2Nodes : Network.Data -> Dict NodeId (Dict InputToken (List NodeId))
+networkData2Nodes network =
+    let initialState = network.nodes
+        |> List.map (\x -> (x.id, Dict.empty))
+        |> Dict.fromList
+
+    in network.edges
+        |> List.concatMap (\x -> (String.split "/" x.label) 
+            |> List.map (\y -> {from = x.from, to = x.to, letter = y}))
+        |> List.foldl
+            -- a -> b -> b
+            (\edge maps ->
+                Dict.update edge.from 
+                    (\transforms -> transforms
+                        |> Maybe.withDefault Dict.empty
+                        |> Dict.update edge.letter (createOrAppend edge.to)
+                        |> Just
+                    )
+                    maps
+            )
+            -- b
+            initialState
+
+networkData2FinalStates : Network.Data -> List NodeId
+networkData2FinalStates network =
+    network.nodes
+        |> List.filter (\x -> x.color == "#F34236")
+        |> List.map (\x -> x.id)
+        |> Set.fromList
+        |> Set.toList
 
 fa2networkData : FA -> Network.Data
 fa2networkData fa =
