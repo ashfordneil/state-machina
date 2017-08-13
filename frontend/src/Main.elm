@@ -4,7 +4,6 @@ import Array
 import Dict exposing (Dict)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick)
 import Http
 import Json.Encode as Encode
 import Json.Decode as Decode
@@ -133,6 +132,31 @@ update msg model =
                 ! [ Http.post "/submit" (Http.jsonBody (encodeFA model.currentFA)) faDecoder
                         |> Http.send ConvertToDFAResult
                   ]
+
+        UI (UI.UpdateEdge edge) ->
+            let new_model = 
+            { model
+                | network =
+                    let
+                        network =
+                            model.network
+                    in
+                        { network
+                            | data =
+                                let
+                                    data =
+                                        model.network.data
+                                in
+                                    { data
+                                        | edges =
+                                            edge
+                                                :: (List.filter (\x -> x.from /= edge.from || x.to /= edge.to) 
+                                                model.network.data.edges)
+                                    }
+                        }
+            }
+            in new_model ! [ let (model_, cmd) = Network.update (Network.UpdateData new_model.network.data) model.network
+                in Cmd.map Network cmd]
 
         UI msg ->
             let
