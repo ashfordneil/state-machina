@@ -27,15 +27,22 @@ function getChildNodeByClass(element, className) {
 }
 
 function editNode(container, data, callback, ports, network) {
-    getChildNodeByClass(container, 'node-id').value = data.label == 'new' ? '' : data.label;
-    getChildNodeByClass(container, 'node-saveButton').onclick = saveNodeData.bind(this, container, data, callback, ports, network);
-    getChildNodeByClass(container, 'node-cancelButton').onclick = cancelNodeEdit.bind(this, container, callback);
-    getChildNodeByClass(container, 'node-popUp').style.display = 'block';
+    if (data.id !== "1") {
+        console.log(data.id)
+        getChildNodeByClass(container, 'node-id').value = data.label == 'new' ? '' : data.label;
+        getChildNodeByClass(container, 'node-saveButton').onclick = saveNodeData.bind(this, container, data, callback, ports, network);
+        getChildNodeByClass(container, 'node-cancelButton').onclick = cancelNodeEdit.bind(this, container, callback);
+        getChildNodeByClass(container, 'node-popUp').style.display = 'block';
+    } else {
+        alert("Sorry, you can't edit the start state")
+        clearNodePopUp(container)
+        callback(null)
+    }
 }
 
 function editEdgeWithoutDrag(container, data, callback, ports, network) {
     // filling in the popup DOM elements
-    getChildNodeByClass(container, 'edge-label').value = data.label == 'new' ? '' : data.label;
+    getChildNodeByClass(container, 'edge-label').value = data.label == undefined ? '' : data.label;
     getChildNodeByClass(container, 'edge-saveButton').onclick = saveEdgeData.bind(this, container, data, callback, ports, network);
     getChildNodeByClass(container, 'edge-cancelButton').onclick = cancelEdgeEdit.bind(this, container, callback);
     getChildNodeByClass(container, 'edge-popUp').style.display = 'block';
