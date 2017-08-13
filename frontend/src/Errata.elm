@@ -9,14 +9,14 @@ stateMachines =
         h2 [] [text "Information"],
         h3 [] [text "About this application"],
         p []
-        [ text
-            ("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod"
-                ++ " tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis"
-                ++ " nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
-                ++ " Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu"
-                ++ " fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in"
-                ++ " culpa qui officia deserunt mollit anim id est laborum."
-            )
+        [ text "This app allows users to build and optimise finite state machines." ],
+        h3 [] [text "Group Members"],
+        ul []
+        [
+            li [] [text "Neil Ashford (UQ)"],
+            li [] [text "Damian Van Kranendonk (UQ)"],
+            li [] [text "Callum Hays (QUT)"],
+            li [] [text "Simon Gordon (QUT)"]
         ],
         h3 [] [text "Resources"],
         ul []
@@ -25,12 +25,19 @@ stateMachines =
             [
                 a
                 [
+                    href "https://en.wikipedia.org/wiki/Finite-state_machine",
+                    target "_blank"
+                ]
+                [ text "Finite-state machine (Wikipedia)" ]
+            ],
+            li []
+            [
+                a
+                [
                     href "http://blog.markshead.com/869/state-machines-computer-science/",
                     target "_blank"
                 ]
-                [
-                    text "State Machines - Basics of Comuter Science"
-                ]
+                [ text "State Machines - Basics of Computer Science (Blog)" ]
             ]
         ]
     ]
