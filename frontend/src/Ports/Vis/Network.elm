@@ -2,6 +2,7 @@ port module Ports.Vis.Network exposing (..)
 
 import Html exposing (Html, div)
 import Html.Attributes exposing (id)
+import Unwrap
 
 
 type alias NodeId =
@@ -66,7 +67,15 @@ subscriptions : Network -> Sub Msg
 subscriptions model =
     Sub.batch
         [ initSuccessfulPort InitSuccessful
-        , edgeSelected EdgeSelected
+        , edgeSelected
+            (\x ->
+                EdgeSelected
+                    (model.data.edges
+                        |> List.filter (\y -> y.to == x.to && y.from == x.from)
+                        |> List.head
+                        |> Unwrap.maybe
+                    )
+            )
         ]
 
 
@@ -230,7 +239,7 @@ port initCmdPort : Network -> Cmd msg
 port initSuccessfulPort : (Bool -> msg) -> Sub msg
 
 
-port edgeSelected : (Edge -> msg) -> Sub msg
+port edgeSelected : ({ from : String, to : String } -> msg) -> Sub msg
 
 
 port updateData : ( String, Data ) -> Cmd msg
