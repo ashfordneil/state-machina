@@ -11,20 +11,18 @@ import Json.Decode as Decode
 import Json.Encode as Encode
 import List.Extra
 import Ports.Vis.Network as Network exposing (Msg(..), Network, NodeId)
-import UI
 import Unwrap
 
 
 type Msg
     = Network Network.Msg
-    | UI UI.Msg
+    | ConvertToDFA
     | ConvertToDFAResult (Result Http.Error FA)
 
 
 type alias Model =
     { currentFA : FA
     , network : Network
-    , ui : UI.Model
     , loading : Bool
     }
 
@@ -95,19 +93,15 @@ init =
                         defaultOptions.manipulation
                 in
                 { defaultOptions
-                    | height = "1000px"
+                    | height = "700px"
                     , edges = { defaultEdgesOptions | arrows = Just "to" }
                     , layout = { defaultLayoutOptions | randomSeed = Just 0 }
                     , manipulation = { defaultManipulationOptions | enabled = True }
                 }
             }
-
-        ui =
-            UI.Unselected
     in
     { network = network
     , currentFA = currentFA
-    , ui = ui
     , loading = False
     }
         ! [ Cmd.map Network (Network.initCmd network) ]
@@ -116,14 +110,6 @@ init =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Network (EdgeSelected edge) ->
-            let
-                ( uiModel, uiCmd ) =
-                    UI.update (UI.EdgeSelected edge) model.ui
-            in
-                { model | ui = uiModel }
-                    ! [ Cmd.map UI uiCmd ]
-
         Network msg ->
             let
                 ( networkModel, networkCmd ) =
@@ -132,19 +118,11 @@ update msg model =
             { model | network = networkModel }
                 ! [ Cmd.map Network networkCmd ]
 
-        UI UI.Go ->
+        ConvertToDFA ->
             { model | loading = True }
                 ! [ Http.post "/submit" (Http.jsonBody (encodeFA model.currentFA)) faDecoder
                         |> Http.send ConvertToDFAResult
                   ]
-
-        UI msg ->
-            let
-                ( uiModel, uiCmd ) =
-                    UI.update msg model.ui
-            in
-            { model | ui = uiModel }
-                ! [ Cmd.map UI uiCmd ]
 
         ConvertToDFAResult result ->
             let
@@ -176,9 +154,9 @@ view : Model -> Html Msg
 view model =
     div [ class "container" ]
         [ h1 [] [ text "State Machina" ]
-        , Html.map UI (UI.viewButtons model.ui)
         , Network.view model.network
-        , Html.map UI (UI.viewInput model.ui)
+        , div [ id "buttons" ]
+            [ button [ onClick ConvertToDFA, class "button" ] [ text "OPTIMISE" ] ]
         , Errata.stateMachines
         ]
 

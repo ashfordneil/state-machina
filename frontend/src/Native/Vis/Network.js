@@ -78,7 +78,7 @@ function saveEdgeData(container, data, callback) {
 
 
 module.exports = ports => {
-    const networkMap = {}
+    const networkMap = {};
 
     ports.initCmdPort.subscribe(({ divId, data, options }) => {
         const container = document.getElementById(divId);
@@ -111,17 +111,21 @@ module.exports = ports => {
                 editEdgeWithoutDrag(container, data, callback)
             }
         }
-
         networkMap[divId] = new Network(
             getChildNodeByClass(container, "canvas-container"),
             data,
             options
-        )
+        );
 
         ports.initSuccessfulPort.send(true)
     })
 
     ports.updateData.subscribe(([divId, data]) => {
-        networkMap[divId].setData(data)
-    })
-}
+        console.log(data);
+        for (var i = 0; i < data.edges.length; ++i) {
+            const { from, to } = data.edges[i];
+            data.edges[i].id = JSON.stringify({ from, to });
+        }
+        networkMap[divId].setData(data);
+    });
+};
