@@ -116,6 +116,14 @@ init =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        Network (EdgeSelected edge) ->
+            let
+                ( uiModel, uiCmd ) =
+                    UI.update (UI.EdgeSelected edge) model.ui
+            in
+                { model | ui = uiModel }
+                    ! [ Cmd.map UI uiCmd ]
+
         Network msg ->
             let
                 ( networkModel, networkCmd ) =

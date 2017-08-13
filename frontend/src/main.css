@@ -59,3 +59,16 @@ div#mainNetwork {
 	box-shadow: 0 0 #ab3c3c;
 	top: 6px;
 }
+
+#edit-transition {
+	padding: 10px;
+
+}
+
+#edit-transition .button {
+	background-color: #fff;
+}
+
+#edit-transition .selected-button {
+	background-color: #fee;
+}

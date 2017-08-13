@@ -1,5 +1,11 @@
 import { Dataset, Network } from 'vis/index-network';
 
+const registerEvents = (data, ports, network) => {
+    network.on("selectEdge", ({edges}) => {
+        ports.edgeSelected.send(data.edges.filter(edge => edge.id === edges[0])[0]);
+    });
+}
+
 module.exports = ports => {
     const networkMap = {}
 
@@ -10,7 +16,9 @@ module.exports = ports => {
             options
         )
 
+        registerEvents(data, ports, networkMap[divId]);
         ports.initSuccessfulPort.send(true)
+
     })
 
     ports.updateData.subscribe(([divId, data]) => {

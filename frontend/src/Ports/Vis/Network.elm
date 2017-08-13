@@ -38,6 +38,7 @@ type alias Network =
 type Msg
     = StartInit
     | InitSuccessful Bool
+    | EdgeSelected Edge
     | UpdateData Data
     | DoubleClick NodeId
 
@@ -63,7 +64,10 @@ update msg model =
 
 subscriptions : Network -> Sub Msg
 subscriptions model =
-    initSuccessfulPort InitSuccessful
+    Sub.batch
+        [ initSuccessfulPort InitSuccessful
+        , edgeSelected EdgeSelected
+        ]
 
 
 view : Network -> Html msg
@@ -237,7 +241,7 @@ port initCmdPort : Network -> Cmd msg
 port initSuccessfulPort : (Bool -> msg) -> Sub msg
 
 
-port doubleClickNodePort : (NodeId -> msg) -> Sub msg
+port edgeSelected : (Edge -> msg) -> Sub msg
 
 
 port updateData : ( String, Data ) -> Cmd msg
