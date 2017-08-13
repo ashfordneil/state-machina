@@ -44,6 +44,5 @@ stateMachines =
                     [ text "Source code of this application"
                     ]
                 ]
-                [ text "State Machines - Basics of Computer Science (Blog)" ]
             ]
         ]
