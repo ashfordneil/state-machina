@@ -6,7 +6,6 @@ import Html.Attributes exposing (href, target)
 
 stateMachines =
     div []
-<<<<<<< HEAD
         [ h2 [] [ text "Information" ]
         , h3 [] [ text "Authors" ]
         , p [] [ text "Proudly made by Neil Ashford, Simon Gordon, Callum Hays and Damian Van Kranendonk." ]
@@ -44,39 +43,6 @@ stateMachines =
                     ]
                     [ text "Source code of this application"
                     ]
-=======
-    [ 
-        h2 [] [text "Information"],
-        h3 [] [text "About this application"],
-        p []
-        [ text "This app allows users to build and optimise finite state machines." ],
-        h3 [] [text "Group Members"],
-        ul []
-        [
-            li [] [text "Neil Ashford (UQ)"],
-            li [] [text "Damian Van Kranendonk (UQ)"],
-            li [] [text "Callum Hays (QUT)"],
-            li [] [text "Simon Gordon (QUT)"]
-        ],
-        h3 [] [text "Resources"],
-        ul []
-        [
-            li []
-            [
-                a
-                [
-                    href "https://en.wikipedia.org/wiki/Finite-state_machine",
-                    target "_blank"
-                ]
-                [ text "Finite-state machine (Wikipedia)" ]
-            ],
-            li []
-            [
-                a
-                [
-                    href "http://blog.markshead.com/869/state-machines-computer-science/",
-                    target "_blank"
->>>>>>> 289b35df32f3000674ab172a6ab6b2f0ca183792
                 ]
                 [ text "State Machines - Basics of Computer Science (Blog)" ]
             ]
