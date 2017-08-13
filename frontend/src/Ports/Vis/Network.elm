@@ -55,7 +55,7 @@ update msg model =
 
         UpdateData data ->
             { model | data = data }
-                ! [ updateData (model.divId, data) ]
+                ! [ updateData ( model.divId, data ) ]
 
         _ ->
             model ! []
@@ -89,7 +89,8 @@ type alias Options =
     , layout : LayoutOptions
 
     -- , interaction : InteractionOptions
-    -- , manipulation : ManipulationOptions
+    , manipulation : ManipulationOptions
+
     -- , physics : PhysicsOptions
     }
 
@@ -112,7 +113,8 @@ defaultOptions =
     , layout = defaultLayoutOptions
 
     -- , interaction = defaultInteractionOptions
-    -- , manipulation = defaultManipulationOptions
+    , manipulation = defaultManipulationOptions
+
     -- , physics = defaultPhysicsOptions
     }
 
@@ -220,6 +222,15 @@ defaultLayoutOptions =
     { randomSeed = Nothing }
 
 
+type alias ManipulationOptions =
+    { enabled : Bool }
+
+
+defaultManipulationOptions : ManipulationOptions
+defaultManipulationOptions =
+    { enabled = False }
+
+
 port initCmdPort : Network -> Cmd msg
 
 
@@ -229,4 +240,4 @@ port initSuccessfulPort : (Bool -> msg) -> Sub msg
 port doubleClickNodePort : (NodeId -> msg) -> Sub msg
 
 
-port updateData : (String, Data) -> Cmd msg
+port updateData : ( String, Data ) -> Cmd msg
