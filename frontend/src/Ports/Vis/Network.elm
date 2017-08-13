@@ -39,6 +39,7 @@ type Msg
     = StartInit
     | InitSuccessful Bool
     | UpdateData Data
+    | DataChangedStart ()
     | DataChanged Data
 
 
@@ -68,6 +69,7 @@ subscriptions : Network -> Sub Msg
 subscriptions model =
     Sub.batch
         [ initSuccessfulPort InitSuccessful
+        , dataChangedStartingPort DataChangedStart
         , dataChangedPort DataChanged
         ]
 
@@ -82,11 +84,15 @@ view model =
                 []
             , table [ attribute "style" "margin:auto;" ]
                 [ tr []
-                    [ td [] [ text "name" ]
+                    [ td [] [ text "Name" ]
                     , td []
-                        [ input [ class "node-id", value "new value" ]
+                        [ input [ class "node-id", placeholder "new value", required True ]
                             []
                         ]
+                    ]
+                , tr []
+                    [ td [] [ text "Accepting" ]
+                    , td [] [ input [ type_ "checkbox", class "accepting-checkbox" ] [] ]
                     ]
                 ]
             , input [ class "node-saveButton", type_ "button", value "save" ]
@@ -104,7 +110,7 @@ view model =
                     [ td []
                         [ text "Symbols" ]
                     , td []
-                        [ input [ class "edge-label", value "new value" ]
+                        [ input [ class "edge-label", placeholder "new value" ]
                             []
                         ]
                     ]
@@ -286,6 +292,9 @@ port initSuccessfulPort : (Bool -> msg) -> Sub msg
 
 
 port updateDataPort : ( String, Data ) -> Cmd msg
+
+
+port dataChangedStartingPort : (() -> msg) -> Sub msg
 
 
 port dataChangedPort : (Data -> msg) -> Sub msg
