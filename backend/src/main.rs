@@ -144,4 +144,51 @@ mod test {
         assert_eq!(response.status(), Status::BadRequest);
     }
 
+    #[test]
+    fn test_double_submit_nfa_dfa() {
+        let rocket = rocket();
+        let client = Client::new(rocket).expect("valid rocket instance");
+
+        //NFA
+        let input = r#"{
+            "start": "1",
+            "alphabet": ["a", "b"],
+            "nodes": {
+                "1": {
+                    "a": ["1", "2"],
+                    "b": ["1"]
+                },
+                "2": {
+                    "a": ["3"],
+                    "b": ["3"]
+                },
+                "3": {
+                    "a": ["1"],
+                    "b": ["2"]
+                }
+            },
+            "final_states": ["3"]
+        }"#;
+
+        let mut response = client
+            .post("/submit")
+            .body(input)
+            .header(ContentType::JSON)
+            .dispatch();
+
+        assert_eq!(response.status(), Status::Ok);
+
+        //Convert JSON to DFA
+        let dfa_json: &str = &(response.body_string()).unwrap();
+
+        //Re-submit the DFA JSON we received
+        let response = client
+            .post("/submit")
+            .body(dfa_json)
+            .header(ContentType::JSON)
+            .dispatch();
+
+        assert_eq!(response.status(), Status::Ok);
+    }
+
 }
